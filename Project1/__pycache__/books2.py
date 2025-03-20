@@ -1,5 +1,7 @@
 # Import FastAPI framework
 from fastapi import FastAPI
+from pydantic import BaseModel
+
 
 # Create a FastAPI app instance
 app = FastAPI()
@@ -21,6 +23,13 @@ class Book:
         self.description = description
         self.rating = rating
 
+class BookRequest(BaseModel):
+    id: int
+    title: str
+    author: str
+    description: str
+    rating: int
+
 # Create a list of Book objects (acting as a mock database)
 BOOKS = [
     Book(1, 'Computer science Pro', 'codingwithroby', 'A very nice Book!', 5),
@@ -37,3 +46,11 @@ async def read_all_books():
     # FastAPI cannot directly return custom Python objects (Book instances)
     # Need to convert each Book object to a dictionary
     return BOOKS  # Convert objects to dict before returning
+
+@app.post("/create-book")
+async def create_book(book_request : BookRequest):
+    # print(type(book_request))
+    new_book = Book(**book_request.dict())
+    print(type(new_book))
+    BOOKS.append(new_book)
+
