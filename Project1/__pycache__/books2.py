@@ -53,39 +53,29 @@ BOOKS = [
     Book(6, 'HP3', 'Author 3', 'Book Description', 1),
 ]
 
-# API endpoint to return all books
+# Endpoint to return all books
 @app.get("/books")
 async def read_all_books():
-    # FastAPI cannot directly return custom Python objects (Book instances)
-    # Need to convert each Book object to a dictionary
-    return BOOKS  # Convert objects to dict before returning
+    # Convert each Book object to dictionary before returning
+    return [book.to_dict() for book in BOOKS]
 
+# Endpoint to return a specific book by ID (e.g., /books/1)
 @app.get("/books/{book_id}")
-async def read_book(book_id : int):
+async def read_book(book_id: int = Path(gt=0)):
     for book in BOOKS:
         if book.id == book_id:
-            return book
+            return book.to_dict()
+    # If no book found, raise a 404 error
+    raise HTTPException(status_code=404, detail="Item Not Found")
 
+# Endpoint to filter books by rating using query parameter (e.g., /books/?book_rating=5)
 @app.get("/books/")
-async def read_book_by_rating(book_rating: int):
-    books_to_return=[]
-    for book in BOOKS:
-        if book.rating == book_rating:
-            books_to_return.append(book)
-    return books_to_return
+async def read_book_by_rating(book_rating: int = Query(gt=0, lt=6)):
+    filtered_books = [book.to_dict() for book in BOOKS if book.rating == book_rating]
+    return filtered_books
 
-@app.post("/create-book")
-async def create_book(book_request : BookRequest):
-    # print(type(book_request))
-    new_book = Book(**book_request.dict())
-    # print(type(new_book))
-    BOOKS.append(find_book_id(new_book))
-
-def find_book_id(book : Book):
-
-    book.id = 1 if len(BOOKS) == 0 else BOOKS[-1].id + 1
-    # if len(BOOKS) > 0:
-    #     book.id = BOOKS[-1].id + 1
-    # else:
-    #     book.id = 1
-    return book
+# Endpoint to filter books by published year using query parameter (e.g., /books/publish/?published_date=2029)
+@app.get("/books/publish/")
+async def read_book_by_published_date(published_date: int = Query(gt=1999, lt=2031)):
+    filtered_books = [book.to_dict() for book in BOOKS if book.published_date == published_date]
+    return filtered_books
